@@ -38,15 +38,12 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class HttpClient {
 
-    public static final int TIME_OUT_MILLIS = Integer
-        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
+    public static final int READ_TIME_OUT_MILLIS = Integer
+        .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
     public static final int CON_TIME_OUT_MILLIS = Integer
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
     private static final boolean ENABLE_HTTPS = Boolean
         .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
-
-    private static final String POST = "POST";
-    private static final String PUT = "PUT";
 
     static {
         // limit max redirection
@@ -76,11 +73,10 @@ public class HttpClient {
 
             setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
-            conn.setReadTimeout(TIME_OUT_MILLIS);
+            conn.setReadTimeout(READ_TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
             conn.setDoOutput(true);
             if (StringUtils.isNotBlank(body)) {
-                // fix: apache http nio framework must set some content to request body
                 byte[] b = body.getBytes();
                 conn.setRequestProperty("Content-Length", String.valueOf(b.length));
                 conn.getOutputStream().write(b, 0, b.length);
@@ -88,7 +84,9 @@ public class HttpClient {
                 conn.getOutputStream().close();
             }
             conn.connect();
-            NAMING_LOGGER.debug("Request from server: " + url);
+            if (NAMING_LOGGER.isDebugEnabled()) {
+                NAMING_LOGGER.debug("Request from server: " + url);
+            }
             return getResult(conn);
         } catch (Exception e) {
             try {
